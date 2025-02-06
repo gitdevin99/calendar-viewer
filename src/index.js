@@ -2,7 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const { createClient } = require('redis');
-const RedisStore = require('connect-redis')(session);
+const connectRedis = require('connect-redis');
+const RedisStore = connectRedis.default;
 const path = require('path');
 const cors = require('cors');
 
@@ -18,7 +19,21 @@ const redisClient = createClient({
 // Initialize store
 const redisStore = new RedisStore({
     client: redisClient,
-    prefix: 'calendar:',
+    prefix: 'calendar:'
+});
+
+// Create session middleware
+const sessionMiddleware = session({
+    store: redisStore,
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
 });
 
 // Error handling for Redis
@@ -47,19 +62,8 @@ async function startServer() {
         app.use(cors());
         app.use(express.static(path.join(__dirname, 'public')));
 
-        // Session middleware
-        app.use(session({
-            store: redisStore,
-            secret: process.env.SESSION_SECRET || 'your-secret-key',
-            resave: false,
-            saveUninitialized: false,
-            cookie: {
-                secure: process.env.NODE_ENV === 'production',
-                httpOnly: true,
-                sameSite: 'lax',
-                maxAge: 24 * 60 * 60 * 1000 // 24 hours
-            }
-        }));
+        // Apply session middleware
+        app.use(sessionMiddleware);
 
         // Routes
         app.use('/auth', require('./routes/auth'));
