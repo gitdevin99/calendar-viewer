@@ -26,9 +26,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Initialize RedisStore
-const RedisStore = require('connect-redis').default;
-
 // Session middleware
 app.use(session({
     store: new RedisStore({
