@@ -2,8 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const { createClient } = require('redis');
-const connectRedis = require('connect-redis');
-const RedisStore = connectRedis.default;
+const RedisStore = require('connect-redis');
 const path = require('path');
 const cors = require('cors');
 
@@ -17,7 +16,7 @@ const redisClient = createClient({
 });
 
 // Initialize store
-const redisStore = new RedisStore({
+const redisStore = new (RedisStore(session))({
     client: redisClient,
     prefix: 'calendar:'
 });
