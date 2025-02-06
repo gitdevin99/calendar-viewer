@@ -14,7 +14,11 @@ const redisClient = createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
+// Connect to Redis and handle connection
 redisClient.connect().catch(console.error);
+
+redisClient.on('error', (err) => console.log('Redis Client Error', err));
+redisClient.on('connect', () => console.log('Connected to Redis'));
 
 // Middleware
 app.use(express.json());
@@ -22,9 +26,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Initialize RedisStore
+const RedisStore = require('connect-redis').default;
+
 // Session middleware
 app.use(session({
-    store: new RedisStore({ client: redisClient }),
+    store: new RedisStore({
+        client: redisClient,
+        prefix: 'calendar:'
+    }),
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
