@@ -2,19 +2,25 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const { createClient } = require('redis');
-const RedisStore = require('connect-redis').default;
+const connectRedis = require('connect-redis');
 const path = require('path');
 const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize Redis client
-const redisClient = createClient({
+// Initialize client.
+let redisClient = createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
-// Connect to Redis and handle connection
+// Initialize store.
+let redisStore = new connectRedis({
+    client: redisClient,
+    prefix: 'calendar:',
+});
+
+// Connect to Redis
 redisClient.connect().catch(console.error);
 
 redisClient.on('error', (err) => console.log('Redis Client Error', err));
@@ -28,10 +34,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Session middleware
 app.use(session({
-    store: new RedisStore({
-        client: redisClient,
-        prefix: 'calendar:'
-    }),
+    store: redisStore,
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
