@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const { createClient } = require('redis');
-const RedisStore = require('connect-redis');
+const RedisStore = require('connect-redis')(session);
 const path = require('path');
 const cors = require('cors');
 
@@ -12,11 +12,14 @@ const PORT = process.env.PORT || 3000;
 // Initialize Redis client
 const redisClient = createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379',
-    legacyMode: false
+    socket: {
+        tls: true,
+        rejectUnauthorized: false
+    }
 });
 
-// Initialize store
-const redisStore = new (RedisStore(session))({
+// Initialize store.
+const redisStore = new RedisStore({
     client: redisClient,
     prefix: 'calendar:'
 });
